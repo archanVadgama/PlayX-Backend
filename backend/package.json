@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon --exec 'npm run lint && node' dist/index.js",
     "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "eslint",
     "prepare": "husky"
   },
   "author": "",
