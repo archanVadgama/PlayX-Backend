@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { hash } from "argon2";
 import { ResponseCodes } from "./response-code.js";
-export /**
+/**
  * This is the universal response format that will be used in the API.
  *
  * @template TData
@@ -17,7 +17,8 @@ export /**
  * @param {string} key
  * @param {(TData | null)} [data]
  * @return {*}
- */ const apiResponse = (category, key, data) => {
+ */
+export const apiResponse = (category, key, data) => {
     var _a;
     const responseCode = (_a = ResponseCodes[category]) === null || _a === void 0 ? void 0 : _a[key];
     if (!responseCode) {
@@ -29,12 +30,13 @@ export /**
         data: data !== null && data !== void 0 ? data : null,
     };
 };
-export /**
+/**
  * This function is used to hash a password using the argon2 algorithm.
  *
  * @param {string} password
  * @return {*}  {Promise<string>}
- */ const getHashPassword = (password) => __awaiter(void 0, void 0, void 0, function* () {
+ */
+export const getHashPassword = (password) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         return yield hash(password);
     }
@@ -43,13 +45,14 @@ export /**
         return "false";
     }
 });
-export /**
+/**
  * This function is used to verify a password against a hashed password using the argon2 algorithm.
  *
  * @param {string} hashedPassword
  * @param {string} plainPassword
  * @return {*}  {Promise<boolean>}
- */ const verifyPassword = (hashedPassword, plainPassword) => __awaiter(void 0, void 0, void 0, function* () {
+ */
+export const verifyPassword = (hashedPassword, plainPassword) => __awaiter(void 0, void 0, void 0, function* () {
     const { verify } = yield import("argon2");
     try {
         return yield verify(hashedPassword, plainPassword);
