@@ -1,0 +1,1 @@
+// This folder contains the controller responsible for handling various routes in the application.

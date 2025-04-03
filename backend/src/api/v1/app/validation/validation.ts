@@ -1,0 +1,1 @@
+// This folder contains different validation schemas for the application.

@@ -1,2 +1,1 @@
-const test = "hello"
-console.log("success",test)
+// This file contains the main entry point for the backend application.
