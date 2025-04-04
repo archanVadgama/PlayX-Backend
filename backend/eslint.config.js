@@ -19,7 +19,7 @@ export default defineConfig([
     extends: ["js/recommended", ...tseslint.configs.recommended],
     rules: {
       // 🚨 Possible Errors - Prevent syntax issues & runtime errors
-      "no-console": "warn",
+      "no-console": "error",
       "no-debugger": "warn",
       "no-unsafe-finally": "error",
       "no-extra-semi": "error",
