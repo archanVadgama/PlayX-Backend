@@ -122,15 +122,10 @@ export class AuthController {
                 },
             });
 
-            if (signUp) {
-                res
-                    .status(StatusCodes.OK)
-                    .json(apiResponse(ResponseCategory.SUCCESS, "signUp"));
-            } else {
-                res
-                    .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                    .json(apiResponse(ResponseCategory.ERROR, "unexpectedError"));
-            }
+            res
+                .status(StatusCodes.OK)
+                .json(apiResponse(ResponseCategory.SUCCESS, "signUp"));
+            
         } catch (error) {
             res
                 .status(StatusCodes.INTERNAL_SERVER_ERROR)
