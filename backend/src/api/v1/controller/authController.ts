@@ -1,9 +1,9 @@
 import { Request, Response, RequestHandler } from "express";
 import { validationResult } from "express-validator";
-import { ResponseCategory } from "../../utility/response-code.js";
-import { apiResponse, getHashPassword, verifyPassword } from "../../utility/helper.js";
+import { ResponseCategory } from "../utility/response-code.js";
+import { apiResponse, getHashPassword, verifyPassword } from "../utility/helper.js";
 import { StatusCodes } from "http-status-codes";
-import { JWTAuth } from "../../utility/jwtAuth.js";
+import { JWTAuth } from "../utility/jwtAuth.js";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();

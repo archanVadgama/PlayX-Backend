@@ -1,6 +1,6 @@
 import { Request, Response, RequestHandler } from "express";
-import { ResponseCategory } from "../../utility/response-code.js";
-import { apiResponse } from "../../utility/helper.js";
+import { ResponseCategory } from "../utility/response-code.js";
+import { apiResponse } from "../utility/helper.js";
 import { StatusCodes } from "http-status-codes";
 
 /**

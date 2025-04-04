@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { JWTAuth } from "../../utility/jwtAuth.js"
-import { ResponseCategory } from "../../utility/response-code.js";
-import { apiResponse } from "../../utility/helper.js";
+import { JWTAuth } from "../utility/jwtAuth.js"
+import { ResponseCategory } from "../utility/response-code.js";
+import { apiResponse } from "../utility/helper.js";
 import { StatusCodes } from "http-status-codes";
 import { PrismaClient } from "@prisma/client";
 
