@@ -1,3 +1,0 @@
-# backend/.husky/pre-commit
-cd backend
-npm run lint
