@@ -10,11 +10,9 @@
 │-- src
 │   │-- api
 │   │   │-- v1              # API version 1
-│   │   │   │-- app
-│   │   │   │   ├── controller  # Handles business logic
-│   │   │   │   ├── middleware  # Express middlewares
-│   │   │   │   ├── validation  # Request validation schemas
-│   │   │   │
+│   │   │   ├── controller  # Handles business logic
+│   │   │   ├── middleware  # Express middlewares
+│   │   │   ├── validation  # Request validation schemas
 │   │   │   ├── routes       # Defines API routes
 │   │   │   ├── utility      # Utility functions/helpers
 │   │
