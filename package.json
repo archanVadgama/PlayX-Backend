@@ -3,14 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
-  "husky": {
-    "gitDir": "../.git"
-  },
   "scripts": {
     "start": "nodemon --ignore logs/* --exec 'npm run lint && node' dist/index.js",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "cd .. && husky backend/.husky"
+    "prepare": "husky"
   },
   "author": "",
   "license": "ISC",
