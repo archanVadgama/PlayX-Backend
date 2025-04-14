@@ -14,11 +14,11 @@ export class JWTAuth {
      * Generates a JWT token for the given user object.
      *
      * @static
-     * @param {object} user
+     * @param {JWTPayload} user
      * @return {*}  {string}
      * @memberof JWTAuth
      */
-    static generateToken(user: object, refreshToken: boolean = false): Record<string, string> {
+    static generateToken(user: JWTPayload, refreshToken: boolean = false): Record<string, string> {
         if (!ENV.JWT_SECRET || !ENV.JWT_TOKEN_TIME) {
             throw new Error("JWT_SECRET or JWT_TOKEN_TIME is not defined");
         }

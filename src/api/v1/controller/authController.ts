@@ -68,7 +68,7 @@ export class AuthController {
                 return;
             }
 
-            const userJWTData:IUserJWTData = {
+            const userJWTData:JWTPayload = {
                 id: btoa(getUser.id.toString()),
                 username: getUser.username,
                 isAdmin: getUser.isAdmin,
@@ -234,7 +234,7 @@ export class AuthController {
                             return;
                         }
     
-                        const userJWTData:IUserJWTData = {
+                        const userJWTData:JWTPayload = {
                             id: btoa(getUser.id.toString()),
                             username: getUser.username,
                             isAdmin: getUser.isAdmin,

@@ -34,7 +34,7 @@ declare global {
     message: string;
   }
 
-  interface IUserJWTData{
+  interface JWTPayload {
     id: string;
     username: string;
     isAdmin: boolean;
