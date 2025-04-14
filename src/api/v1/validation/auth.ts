@@ -71,12 +71,19 @@ const emailField: { [key: string]: { errorMessage?: string } | boolean } = {
   },
 };
 
-/**
- * Schema definition for user login validation.
- */
+const rememberMe: { [key: string]: { errorMessage?: string } | boolean } = {
+  notEmpty: {
+    errorMessage: "Remember Me is required",
+  },
+  isBoolean: {
+    errorMessage: "Remember Me should be a boolean value",
+  },
+};
+
 const logInSchema: Schema = {
-  userName: stringField(5, 20, "Username"),
+  username: stringField(5, 20, "Username"),
   password: stringField(4, 12, "Password"),
+  rememberMe,
 };
 
 /**
@@ -87,9 +94,10 @@ const logInSchema: Schema = {
  */
 const signUpSchema: Schema = {
   ...logInSchema,
-  fullName: stringField(5, 40, "Name"),
+  displayName: stringField(5, 40, "Name"),
   mobileNumber: intField(10, 10, "Mobile Number"),
   email: emailField,
 };
+
 
 export { logInSchema, signUpSchema };

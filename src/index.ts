@@ -1,10 +1,14 @@
+import "express-async-errors"; // for async error handling
 import express from "express";
 import "dotenv/config";
 import auth from "./api/v1/routes/auth.js";
+import admin from "./api/v1/routes/admin.js";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { requestContext } from "./api/v1/middleware/requestContext.js";
+import { errorMiddleware } from "./api/v1/middleware/errorHandler.js";
+import "./api/v1/global.js";
 
 const ENV = process.env;
 const app = express();
@@ -39,8 +43,13 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data from 
 app.use(express.json()); // Parse JSON data from requests
 app.use(cookieParser()); // Parse cookies from requests
 
+
 app.use("/api/v1", auth); // Auth routes with the /api/v1 prefix
+app.use("/api/v1", admin); // Admin routes with the /api/v1 prefix
+
+
+app.use(errorMiddleware);// Centralized error-handling middleware
 
 app.listen(ENV.PORT, () => {
-  console.log(`Server running on ${ENV.APP_URL}:${ENV.PORT}`);
+  logHttp("info", `Server running on ${ENV.APP_URL}:${ENV.PORT}`);
 });

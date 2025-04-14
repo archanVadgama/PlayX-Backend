@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 import "dotenv/config";
 
 const ENV = process.env;
-const JWT_SECRET = ENV.JWT_SECRET;
 
 /**
  * JWT Authentication class to handle token generation and verification.
@@ -19,11 +18,25 @@ export class JWTAuth {
      * @return {*}  {string}
      * @memberof JWTAuth
      */
-    static setToken(user: object): string {
-        if (!JWT_SECRET) {
-            throw new Error("JWT_SECRET is not defined");
+    static generateToken(user: object, refreshToken: boolean = false): Record<string, string> {
+        if (!ENV.JWT_SECRET || !ENV.JWT_TOKEN_TIME) {
+            throw new Error("JWT_SECRET or JWT_TOKEN_TIME is not defined");
         }
-        return jwt.sign(user, JWT_SECRET);
+        if (refreshToken && (!ENV.REFRESH_SECRET || !ENV.REFRESH_TOKEN_TIME)) {
+            throw new Error("REFRESH_SECRET or REFRESH_TOKEN_TIME is not defined");
+        }
+
+        const accessToken = jwt.sign(user, ENV.JWT_SECRET, { expiresIn: ENV.JWT_TOKEN_TIME as jwt.SignOptions["expiresIn"] });
+        const tokens: Record<string, string> = { accessToken };
+
+        if (refreshToken) {
+            if (!ENV.REFRESH_SECRET) {
+                throw new Error("REFRESH_SECRET is not defined");
+            }
+            const refreshTokenValue = jwt.sign(user, ENV.REFRESH_SECRET, { expiresIn: ENV.REFRESH_TOKEN_TIME as jwt.SignOptions["expiresIn"] });
+            tokens.refreshToken = refreshTokenValue;
+        }
+        return tokens;
     }
 
     /**
@@ -37,37 +50,29 @@ export class JWTAuth {
      *   })}
      * @memberof JWTAuth
      */
-    static getToken(token: string): {
+    static verifyToken(token: string, refreshToken: boolean = false): {
         status: boolean;
         msg: string | jwt.JwtPayload | undefined;
     } {
-        if (!JWT_SECRET) {
+        if (!ENV.JWT_SECRET) {
             throw new Error("JWT_SECRET is not defined");
         }
+        if (refreshToken && (!ENV.REFRESH_SECRET)) {
+            throw new Error("REFRESH_SECRET is not defined");
+        }
         try {
-            // Verify the token using the secret key
-            const decoded = jwt.verify(token, JWT_SECRET);
-            return { status: true, msg: decoded };
-        } catch (err: unknown) {
-            // Handle different JWT errors  
-            let errorMessage;
-            if (err instanceof jwt.TokenExpiredError) {
-                switch (err.name) {
-                    case "TokenExpiredError":
-                        errorMessage = "Token has expired";
-                        break;
-                    case "JsonWebTokenError":
-                        errorMessage = "Invalid token";
-                        break;
-                    case "NotBeforeError":
-                        errorMessage = "Token not active";
-                        break;
-                    default:
-                }
-            } else {
-                errorMessage = "An unknown error occurred";
+            const SECRET = refreshToken === true ? ENV.REFRESH_SECRET : ENV.JWT_SECRET;
+            if (!SECRET) {
+                throw new Error("SECRET key is not defined");
             }
-            return { status: false, msg: errorMessage };
+            // Verify the token using the secret key
+            const decoded = jwt.verify(token, SECRET);
+            return { status: true, msg: decoded };
+        } catch (error) {
+            if (error instanceof Error) {
+                return { status: false, msg: error.name };
+            }
+            return { status: false, msg: "UnknownError" };
         }
     }
 }

@@ -40,7 +40,7 @@ export const getHashPassword = async (password: string): Promise<string> => {
   try {
     return await hash(password);
   } catch (err) {
-    console.error(`Something went wrong: ${err}`);  
+    console.error(`Something went wrong: ${err}`);
     return "false";
   }
 };

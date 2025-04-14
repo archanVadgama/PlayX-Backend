@@ -1,5 +1,4 @@
 import { Request, Response, RequestHandler } from "express";
-import { ResponseCategory } from "../utility/response-code.js";
 import { apiResponse } from "../utility/helper.js";
 import { StatusCodes } from "http-status-codes";
 
@@ -10,21 +9,18 @@ import { StatusCodes } from "http-status-codes";
  * @class DashboardController
  */
 export class DashboardController {
-
-    /**
-     * Handles dashboard data fetching
-     *
-     * @static
-     * @param {Request} req
-     * @param {Response} res
-     * @type {RequestHandler}
-     * @memberof DashboardController
-     */
-    static readonly dashboard: RequestHandler = (req: Request, res: Response) => {
-        res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched"));
-    };    
-   
+  /**
+   * Handles dashboard data fetching
+   *
+   * @static
+   * @param {Request} req
+   * @param {Response} res
+   * @type {RequestHandler}
+   * @memberof DashboardController
+   */
+  static readonly dashboard: RequestHandler = (req: Request, res: Response) => {
+    res
+      .status(StatusCodes.OK)
+      .json(apiResponse(ResponseCategory.SUCCESS, "dataFetched"));
+  };
 }
-
-
-
