@@ -10,22 +10,21 @@
 │-- src
 │   │-- api
 │   │   │-- v1              # API version 1
-│   │   │   │-- app
-│   │   │   │   ├── controller  # Handles business logic
-│   │   │   │   ├── middleware  # Express middlewares
-│   │   │   │   ├── validation  # Request validation schemas
-│   │   │   │
-│   │   │   ├── routes       # Defines API routes
-│   │   │   ├── utility      # Utility functions/helpers
+│   │   │   ├── controller  # Handles business logic
+│   │   │   ├── middleware  # Express middlewares
+│   │   │   ├── validation  # Request validation schemas
+│   │   │   ├── routes      # Defines API routes
+│   │   │   ├── utility     # Utility functions/helpers
+│   │   │   ├── global.ts   # Global utility functions
 │   │
 │   ├── index.ts            # Server initialization
 │
 ├── .env                    # Environment variables (not committed)
 ├── .env.example            # Sample environment variables
-├── .gitignore               # Files to ignore in version control
-├── .prettierrc              # Prettier configuration for code formatting
-├── package.json             # Project dependencies and scripts
-├── tsconfig.json            # TypeScript configuration
+├── .gitignore              # Files to ignore in version control
+├── .prettierrc             # Prettier configuration for code formatting
+├── package.json            # Project dependencies and scripts
+├── tsconfig.json           # TypeScript configuration
 ```
 
 ##  Getting Started
