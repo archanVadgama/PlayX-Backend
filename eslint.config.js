@@ -2,8 +2,10 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
 
 export default defineConfig([
+  prettier,
   {
     files: ["**/*.{js,mjs,cjs,ts}"],
     ignores: [
@@ -13,6 +15,7 @@ export default defineConfig([
       "generated/**",
       "generated/prisma/wasm.js",
       "generated/prisma/**",
+      "src/api/v1/global.ts",
     ],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     plugins: { js },
@@ -27,7 +30,7 @@ export default defineConfig([
 
       // ✅ Best Practices - Enforce quality coding standards
       // "curly": "error",
-      "eqeqeq": ["error", "always"],
+      eqeqeq: ["error", "always"],
       "no-eval": "error",
       "no-implied-eval": "error",
       "no-var": "error",
@@ -36,15 +39,15 @@ export default defineConfig([
       // "no-void": "error",
 
       // 🔍 Variables & Scoping - Ensure proper variable usage
-      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-shadow": "error",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-undef": "off", // TypeScript handles this
-      "@typescript-eslint/no-use-before-define": ["error", { "functions": false, "classes": true }],
+      "@typescript-eslint/no-use-before-define": ["error", { functions: false, classes: true }],
 
       // 🎨 Stylistic Rules - Enforce consistent formatting
       // "indent": ["error", 2],
-      "quotes": ["warn", "double", { "avoidEscape": true }],
+      quotes: ["warn", "double", { avoidEscape: true }],
       // "semi": ["warn", "always"],
       // "comma-dangle": ["error", "always-multiline"],
       "object-curly-spacing": ["warn", "always"],

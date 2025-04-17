@@ -5,9 +5,7 @@ type TStringField = (
   max: number,
   field: string
 ) => {
-  [key: string]:
-  | { errorMessage?: string; options?: { min: number; max: number } }
-  | boolean;
+  [key: string]: { errorMessage?: string; options?: { min: number; max: number } } | boolean;
 };
 
 type TIntField = (
@@ -15,9 +13,7 @@ type TIntField = (
   max: number,
   field: string
 ) => {
-  [key: string]:
-  | { errorMessage?: string; options?: { min: number; max: number } }
-  | boolean;
+  [key: string]: { errorMessage?: string; options?: { min: number; max: number } } | boolean;
 };
 
 /**
@@ -27,11 +23,9 @@ type TIntField = (
  * @param {number} max
  * @param {string} field
  */
-const stringField: TStringField = (
-  min: number,
-  max: number,
-  field: string
-) => ({
+const stringField: TStringField = (min: number, max: number, field: string) => ({
+  trim: true,
+  escape: true,
   notEmpty: {
     errorMessage: `${field} is required`,
   },
@@ -50,6 +44,8 @@ const stringField: TStringField = (
  * @param {string} field
  */
 const intField: TIntField = (min: number, max: number, field: string) => ({
+  trim: true,
+  escape: true,
   notEmpty: {
     errorMessage: `${field} is required`,
   },
@@ -63,6 +59,8 @@ const intField: TIntField = (min: number, max: number, field: string) => ({
 });
 
 const emailField: { [key: string]: { errorMessage?: string } | boolean } = {
+  trim: true,
+  escape: true,
   notEmpty: {
     errorMessage: "Email is required",
   },
@@ -72,6 +70,8 @@ const emailField: { [key: string]: { errorMessage?: string } | boolean } = {
 };
 
 const rememberMe: { [key: string]: { errorMessage?: string } | boolean } = {
+  trim: true,
+  escape: true,
   notEmpty: {
     errorMessage: "Remember Me is required",
   },
@@ -87,17 +87,40 @@ const logInSchema: Schema = {
 };
 
 /**
+ * Schema definition for password reset request validation.
+ */
+const forgotPassSchema: Schema = {
+  email: emailField,
+};
+
+/**
+ * Schema definition for password reset validation.
+ */
+const resetPassSchema: Schema = {
+  resetToken: {
+    trim: true,
+    escape: true,
+    notEmpty: {
+      errorMessage: "Reset Token is required",
+    },
+    isString: { errorMessage: "Reset Token should be string" },
+  },
+  password: stringField(4, 12, "Password"),
+  confirmPassword: stringField(4, 12, "Confirm Password"),
+};
+
+/**
  * Schema definition for user sign-up validation.
  *
  * This schema extends the `logInSchema` and adds additional fields
  * required for user registration
  */
 const signUpSchema: Schema = {
-  ...logInSchema,
+  username: stringField(5, 20, "Username"),
+  password: stringField(4, 12, "Password"),
   displayName: stringField(5, 40, "Name"),
   mobileNumber: intField(10, 10, "Mobile Number"),
   email: emailField,
 };
 
-
-export { logInSchema, signUpSchema };
+export { logInSchema, signUpSchema, forgotPassSchema, resetPassSchema };
