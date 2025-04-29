@@ -11,7 +11,7 @@ router.post("/log-in", checkSchema(logInSchema), AuthController.logInHandler);
 router.post("/sign-up", checkSchema(signUpSchema), AuthController.signUpHandler);
 router.post("/forgot-password", checkSchema(forgotPassSchema), AuthController.forgotPasswordHandler);
 router.post("/reset-password", checkSchema(resetPassSchema), AuthController.resetPasswordHandler);
-router.get("/log-out", AuthController.logOutHandler);
+router.post("/log-out", AuthController.logOutHandler);
 router.get("/refresh-token", AuthController.refreshTokenHandler);
 
 export default router;

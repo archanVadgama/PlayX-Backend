@@ -247,7 +247,7 @@ export class AuthController {
     try {
       // Clear accessToken and refreshToken cookies
       res.clearCookie("accessToken", {
-        httpOnly: true,
+        httpOnly: false,
         secure: NODE_ENV === "production",
         sameSite: "strict",
       });
@@ -382,7 +382,7 @@ export class AuthController {
         if (password !== confirmPassword) {
           res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "passwordNotMatch"));
         }
-        
+
         const hashedPassword = await getHashPassword(password);
 
         // It will store the user data in the database
