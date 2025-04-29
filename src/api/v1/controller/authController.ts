@@ -90,7 +90,7 @@ export class AuthController {
         });
       }
       res.cookie("accessToken", JWT_TOKEN.accessToken, {
-        httpOnly: true,
+        httpOnly: false,
         secure: NODE_ENV === "production" ? true : false,
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
@@ -99,10 +99,7 @@ export class AuthController {
       res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "logIn"));
     } catch (error) {
       logHttp("error", error);
-
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(apiResponse(ResponseCategory.ERROR, "unexpectedError", error));
+      throw new Error(prismaErrorHandler(error as IPrismaError));
     }
   };
 
@@ -212,7 +209,7 @@ export class AuthController {
             const JWT_TOKEN = JWTAuth.generateToken(userJWTData);
 
             res.cookie("accessToken", JWT_TOKEN.accessToken, {
-              httpOnly: true,
+              httpOnly: false,
               secure: NODE_ENV === "production" ? true : false,
               sameSite: "strict",
               maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
@@ -336,6 +333,15 @@ export class AuthController {
     }
   };
 
+  /**
+   * This will be used to reset the password of the user.
+   *
+   * @static
+   * @param {Request} req
+   * @param {Response} res
+   * @type {RequestHandler}
+   * @memberof AuthController
+   */
   static readonly resetPasswordHandler: RequestHandler = async (req: Request, res: Response) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -362,15 +368,21 @@ export class AuthController {
           where: { email: userEmail },
         });
 
-        if (!getUser || typeof getUser.password !== "string") {
+        if (!getUser) {
           res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "userNotFound"));
+          return;
+        }
+
+        if (getUser.resetToken !== resetToken) {
+          res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.TOKEN, "invalidOrExpired"));
           return;
         }
 
         // It will generate the hashed password
         if (password !== confirmPassword) {
-          res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "passwordNotSame"));
+          res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "passwordNotMatch"));
         }
+        
         const hashedPassword = await getHashPassword(password);
 
         // It will store the user data in the database

@@ -6,7 +6,8 @@ import { AuthController } from "../controller/authController.js";
 const router = express.Router();
 
 // [OPEN] Login and signup route
-router.get("/log-in", checkSchema(logInSchema), AuthController.logInHandler);
+
+router.post("/log-in", checkSchema(logInSchema), AuthController.logInHandler);
 router.post("/sign-up", checkSchema(signUpSchema), AuthController.signUpHandler);
 router.post("/forgot-password", checkSchema(forgotPassSchema), AuthController.forgotPasswordHandler);
 router.post("/reset-password", checkSchema(resetPassSchema), AuthController.resetPasswordHandler);

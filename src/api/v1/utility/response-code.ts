@@ -51,6 +51,6 @@ export const ResponseCodes: ResponseCodeMap = {
     validationFailed: { status: false, message: "Validation Failed" },
     userNotFound: { status: false, message: "User Not Found" },
     invalidUserId: { status: false, message: "Invalid User Id" },
-    passwordNotSame: { status: false, message: "Password and Confirm password should be same." },
+    passwordNotMatch: { status: false, message: "Password and Confirm password not match." },
   },
 };

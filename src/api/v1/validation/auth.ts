@@ -72,6 +72,7 @@ const emailField: { [key: string]: { errorMessage?: string } | boolean } = {
 const rememberMe: { [key: string]: { errorMessage?: string } | boolean } = {
   trim: true,
   escape: true,
+  toBoolean: true, // It will convert the value to boolean
   notEmpty: {
     errorMessage: "Remember Me is required",
   },
@@ -118,7 +119,7 @@ const resetPassSchema: Schema = {
 const signUpSchema: Schema = {
   username: stringField(5, 20, "Username"),
   password: stringField(4, 12, "Password"),
-  displayName: stringField(5, 40, "Name"),
+  displayName: stringField(2, 40, "Name"),
   mobileNumber: intField(10, 10, "Mobile Number"),
   email: emailField,
 };
