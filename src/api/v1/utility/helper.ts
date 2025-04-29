@@ -2,25 +2,19 @@ import { hash } from "argon2";
 import { ResponseCodes, ResponseCategory } from "./response-code.js";
 
 /**
- * This is the universal response format that will be used in the API. 
+ * This is the universal response format that will be used in the API.
  *
  * @template TData
  * @param {ResponseCategory} category
  * @param {string} key
  * @param {(TData | null)} [data]
- * @return {*} 
+ * @return {*}
  */
-export const apiResponse = <TData>(
-  category: ResponseCategory,
-  key: string,
-  data?: TData | null
-) => {
+export const apiResponse = <TData>(category: ResponseCategory, key: string, data?: TData | null) => {
   const responseCode = ResponseCodes[category]?.[key];
 
   if (!responseCode) {
-    throw new Error(
-      `Invalid response code key: ${key} for category: ${category}`
-    );
+    throw new Error(`Invalid response code key: ${key} for category: ${category}`);
   }
 
   return {
@@ -52,10 +46,7 @@ export const getHashPassword = async (password: string): Promise<string> => {
  * @param {string} plainPassword
  * @return {*}  {Promise<boolean>}
  */
-export const verifyPassword = async (
-  hashedPassword: string,
-  plainPassword: string
-): Promise<boolean> => {
+export const verifyPassword = async (hashedPassword: string, plainPassword: string): Promise<boolean> => {
   const { verify } = await import("argon2");
   try {
     return await verify(hashedPassword, plainPassword);
@@ -64,3 +55,11 @@ export const verifyPassword = async (
     return false;
   }
 };
+
+/**
+ * This function is used to safely stringify and parse an object.
+ *
+ * @param {*} obj
+ */
+export const safeJson = (obj: object) =>
+  JSON.parse(JSON.stringify(obj, (_, value) => (typeof value === "bigint" ? value.toString() : value)));

@@ -1,6 +1,6 @@
 import express from "express";
 import { checkLogin } from "../middleware/authCheck.js";
-import { DashboardController } from "../controller/dashboardController.js";
+import { DashboardController } from "../controller/admin/dashboardController.js";
 
 const router = express.Router();
 

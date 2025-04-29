@@ -3,6 +3,7 @@ import express from "express";
 import "dotenv/config";
 import auth from "./api/v1/routes/auth.js";
 import admin from "./api/v1/routes/admin.js";
+import user from "./api/v1/routes/user.js";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -16,7 +17,7 @@ const app = express();
 // Define CORS options to control cross-origin requests
 const corsOptions = {
   // Allow requests only from the specified origin (constructed using environment variables)
-  origin: `${ENV.APP_URL}:${ENV.PORT}`,
+  origin: `${ENV.FRONTEND_URL}`,
 
   // Specify the HTTP methods allowed for cross-origin requests
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -43,12 +44,11 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data from 
 app.use(express.json()); // Parse JSON data from requests
 app.use(cookieParser()); // Parse cookies from requests
 
-
 app.use("/api/v1", auth); // Auth routes with the /api/v1 prefix
 app.use("/api/v1", admin); // Admin routes with the /api/v1 prefix
+app.use("/api/v1", user); // User routes with the /api/v1 prefix
 
-
-app.use(errorMiddleware);// Centralized error-handling middleware
+app.use(errorMiddleware); // Centralized error-handling middleware
 
 app.listen(ENV.PORT, () => {
   logHttp("info", `Server running on ${ENV.APP_URL}:${ENV.PORT}`);

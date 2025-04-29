@@ -9,11 +9,7 @@ import { Request, Response, NextFunction } from "express";
  * @param {Response} res
  * @param {NextFunction} next
  */
-export function requestContext(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export function requestContext(req: Request, res: Response, next: NextFunction) {
   asyncLocalStorage.run({ method: req.method, url: req.originalUrl }, () => {
     next();
   });

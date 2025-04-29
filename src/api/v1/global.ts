@@ -5,11 +5,12 @@ import * as response from "./utility/response-code.js";
 
 // Declare global types and variables
 declare global {
-  let logHttp: typeof log.logHttp;
-  let apiResponse: typeof helper.apiResponse;
-  let getHashPassword: typeof helper.getHashPassword;
-  let verifyPassword: typeof helper.verifyPassword;
-  let ResponseCategory: typeof response.ResponseCategory;
+  var logHttp: typeof log.logHttp;
+  var apiResponse: typeof helper.apiResponse;
+  var getHashPassword: typeof helper.getHashPassword;
+  var verifyPassword: typeof helper.verifyPassword;
+  var safeJson: typeof helper.safeJson;
+  var ResponseCategory: typeof response.ResponseCategory;
 }
 
 // Assign to global object
@@ -17,6 +18,7 @@ global.logHttp = log.logHttp;
 global.apiResponse = helper.apiResponse;
 global.getHashPassword = helper.getHashPassword;
 global.verifyPassword = helper.verifyPassword;
+global.safeJson = helper.safeJson;
 const ResponseCategory = response.ResponseCategory;
 global.ResponseCategory = ResponseCategory;
 
