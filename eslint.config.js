@@ -16,6 +16,8 @@ export default defineConfig([
       "generated/prisma/wasm.js",
       "generated/prisma/**",
       "src/api/v1/global.ts",
+      "uploads/**",
+      ".prettierignore",
     ],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     plugins: { js },

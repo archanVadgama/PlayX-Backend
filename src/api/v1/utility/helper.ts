@@ -1,5 +1,6 @@
 import { hash } from "argon2";
 import { ResponseCodes, ResponseCategory } from "./response-code.js";
+import { customAlphabet } from "nanoid";
 
 /**
  * This is the universal response format that will be used in the API.
@@ -63,3 +64,8 @@ export const verifyPassword = async (hashedPassword: string, plainPassword: stri
  */
 export const safeJson = (obj: object) =>
   JSON.parse(JSON.stringify(obj, (_, value) => (typeof value === "bigint" ? value.toString() : value)));
+
+export const generateUUID = () => {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return customAlphabet(alphabet, 7)();
+};

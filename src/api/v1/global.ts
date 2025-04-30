@@ -10,6 +10,7 @@ declare global {
   var getHashPassword: typeof helper.getHashPassword;
   var verifyPassword: typeof helper.verifyPassword;
   var safeJson: typeof helper.safeJson;
+  var generateUUID: typeof helper.generateUUID;
   var ResponseCategory: typeof response.ResponseCategory;
 }
 
@@ -19,6 +20,7 @@ global.apiResponse = helper.apiResponse;
 global.getHashPassword = helper.getHashPassword;
 global.verifyPassword = helper.verifyPassword;
 global.safeJson = helper.safeJson;
+global.generateUUID = helper.generateUUID;
 const ResponseCategory = response.ResponseCategory;
 global.ResponseCategory = ResponseCategory;
 

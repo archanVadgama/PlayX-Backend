@@ -102,6 +102,7 @@ model Video {
   id            Int       @id @default(autoincrement())
   userId        Int
   categoryId    Int
+  uuid          String    @unique // UUID for video
   ageRestricted Boolean   @default(false)
   isPrivate     Boolean   @default(true) // Only `user` can change this
   thumbnailPath String

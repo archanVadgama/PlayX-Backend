@@ -117,7 +117,14 @@ const resetPassSchema: Schema = {
  * required for user registration
  */
 const signUpSchema: Schema = {
-  username: stringField(5, 20, "Username"),
+  username: {
+    ...stringField(5, 20, "Username"),
+    matches: {
+      options: [/^[a-zA-Z0-9_]+$/],
+      errorMessage:
+        "Username can only contain letters, numbers, and underscores, and no spaces or special symbols are allowed",
+    },
+  },
   password: stringField(4, 12, "Password"),
   displayName: stringField(2, 40, "Name"),
   mobileNumber: intField(10, 10, "Mobile Number"),

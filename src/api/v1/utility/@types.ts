@@ -64,5 +64,19 @@ declare global {
     cityId?: number;
   }
 
+  interface UploadVideo {
+    userId: number;
+    categoryId: string;
+    ageRestricted: boolean;
+    isPrivate: boolean;
+    thumbnailPath: string;
+    videoPath: string;
+    title: string;
+    description: string;
+    keywords: string;
+    size: string;
+    duration: string;
+  }
+
   type ResponseCodeMap = Record<ResponseCategory, Record<string, IResponseCode>>;
 }
