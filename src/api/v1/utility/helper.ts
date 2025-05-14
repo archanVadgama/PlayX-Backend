@@ -1,4 +1,4 @@
-import { hash } from "argon2";
+import { hash, verify } from "argon2";
 import { ResponseCodes, ResponseCategory } from "./response-code.js";
 import { customAlphabet } from "nanoid";
 
@@ -48,7 +48,6 @@ export const getHashPassword = async (password: string): Promise<string> => {
  * @return {*}  {Promise<boolean>}
  */
 export const verifyPassword = async (hashedPassword: string, plainPassword: string): Promise<boolean> => {
-  const { verify } = await import("argon2");
   try {
     return await verify(hashedPassword, plainPassword);
   } catch (err) {

@@ -9,7 +9,7 @@ const allowedThumbnailTypes = ["image/jpeg", "image/png"];
 const storage = multer.diskStorage({
   destination: async (_, __, cb) => {
     try {
-      const uploadPath = "../../../uploads";
+      const uploadPath = path.join(process.cwd(), "uploads"); // Use process.cwd() to resolve the path
       await fs.mkdir(uploadPath, { recursive: true }); // Ensure the directory exists
       return cb(null, uploadPath);
     } catch (err) {
@@ -23,6 +23,8 @@ const storage = multer.diskStorage({
   },
 });
 
+// Initialize multer with the defined storage and file filter
+// and file size limit
 const upload = multer({
   storage,
   limits: {

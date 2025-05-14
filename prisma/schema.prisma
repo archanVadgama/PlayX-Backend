@@ -103,16 +103,16 @@ model Video {
   userId        Int
   categoryId    Int
   uuid          String    @unique // UUID for video
-  ageRestricted Boolean   @default(false)
+  isAgeRestricted Boolean   @default(false)
   isPrivate     Boolean   @default(true) // Only `user` can change this
   thumbnailPath String
   videoPath     String
-  title         String // This will also be used in SEO
-  description   String // This will also be used in SEO
+  title         String    // This will also be used in SEO
+  description   String    // This will also be used in SEO
   keywords      String
-  viewCount     String
-  size          String // Size in bytes
-  duration      String // Duration will be used for viewCount 1/3 part of the video
+  viewCount     BigInt    @default(0) // Total views
+  size          BigInt    // Size in bytes
+  duration      Decimal    // Duration will be used for viewCount 1/3 part of the video
   deletedAt     DateTime?
   updatedAt     DateTime  @updatedAt
   createdAt     DateTime  @default(now())

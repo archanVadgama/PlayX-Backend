@@ -23,7 +23,7 @@ type TIntField = (
  * @param {number} max
  * @param {string} field
  */
-const stringField = (min: number, max: number, field: string) => ({
+const stringField: TStringField = (min: number, max: number, field: string) => ({
   trim: true,
   escape: true,
   notEmpty: {
@@ -69,9 +69,9 @@ const emailField: { [key: string]: { errorMessage?: string } | boolean } = {
 };
 
 const uploadVideoSchema: Schema = {
-  userId: intField(1, 20, "User ID"),
-  categoryId: intField(1, 12, "Category ID"),
-  ageRestricted: {
+  userId: stringField(1, 200, "User ID"),
+  categoryId: stringField(1, 200, "Category ID"),
+  isAgeRestricted: {
     trim: true,
     escape: true,
     notEmpty: {
@@ -89,8 +89,8 @@ const uploadVideoSchema: Schema = {
       errorMessage: "Keyword is required",
     },
     isLength: {
-      options: { min: 10, max: 50 },
-      errorMessage: "Keyword must be between 10 to 50 characters",
+      options: { min: 10, max: 100 },
+      errorMessage: "Keyword must be between 10 to 100 characters",
     },
     custom: {
       options: (value: string) => {
@@ -102,6 +102,8 @@ const uploadVideoSchema: Schema = {
       },
     },
   },
+  title: stringField(5, 80, "Title"),
+  description: stringField(10, 500, "Description"),
   isPrivate: {
     trim: true,
     escape: true,

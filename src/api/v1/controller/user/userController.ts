@@ -6,13 +6,9 @@ import { PrismaClient } from "@prisma/client";
 import { prismaErrorHandler } from "../../utility/prismaErrorHandler.js";
 import "dotenv/config";
 import fs from "fs";
-import path from "path";
-import { writeFile } from "fs/promises";
 import sharp from "sharp";
 
 // Extend the Request interface to include the 'files' property
-// Removed incorrect import as 'File' is not exported by 'multer'
-
 declare module "express-serve-static-core" {
   interface Request {
     files?: { [fieldname: string]: Express.Multer.File[] };
@@ -20,9 +16,8 @@ declare module "express-serve-static-core" {
 }
 
 const prisma = new PrismaClient();
-const ENV = process.env;
-const NODE_ENV = ENV.NODE_ENV;
-const basePath = `${process.cwd()}/uploads`;
+// const customBasePath = `${process.cwd()}/uploads`;
+const customBasePath = `${process.env.APP_URL}:${process.env.PORT}/uploads`;
 
 // under development
 export class UserController {
@@ -30,7 +25,7 @@ export class UserController {
     try {
       const feedData = await prisma.video.findMany({
         where: {
-          ageRestricted: false,
+          // isAgeRestricted: false,
           isPrivate: false,
           deletedAt: null, // Only non-deleted videos
           user: {
@@ -39,6 +34,9 @@ export class UserController {
             suspendTill: null,
             deletedAt: null,
           },
+        },
+        orderBy: {
+          createdAt: "desc",
         },
         select: {
           userId: true,
@@ -62,8 +60,10 @@ export class UserController {
 
       const feedDataWithCustomPaths = feedData.map((video) => ({
         ...video,
-        videoPath: `${basePath}/${video.user.username}/video/${video.videoPath}`,
-        thumbnailPath: `${basePath}/${video.user.username}/thumbnail/${video.thumbnailPath}`,
+        duration: Number(video.duration),
+        viewCount: Number(video.viewCount),
+        videoPath: `${customBasePath}/${video.videoPath}`,
+        thumbnailPath: `${customBasePath}/${video.thumbnailPath}`,
       }));
 
       if (!feedData) {
@@ -87,16 +87,42 @@ export class UserController {
       return;
     }
     try {
-      const video = await prisma.video.findUnique({
+      const videoData = await prisma.video.findUnique({
         where: { uuid: videoUUID.toString(), isPrivate: false, deletedAt: null },
+        select: {
+          uuid: true,
+          title: true,
+          duration: true,
+          viewCount: true,
+          createdAt: true,
+          videoPath: true,
+          thumbnailPath: true,
+          user: {
+            select: {
+              username: true,
+              displayName: true,
+              channelName: true,
+              image: true,
+            },
+          },
+        },
       });
 
-      if (!video) {
+      if (!videoData) {
         res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoNotFound"));
         return;
       }
 
-      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", video));
+      const feedDataWithCustomPaths = {
+        ...videoData,
+        duration: Number(videoData.duration),
+        viewCount: Number(videoData.viewCount),
+        videoPath: `${customBasePath}/${videoData.videoPath}`,
+        thumbnailPath: `${customBasePath}/${videoData.thumbnailPath}`,
+      };
+      res
+        .status(StatusCodes.OK)
+        .json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", feedDataWithCustomPaths));
     } catch (error) {
       throw new Error(prismaErrorHandler(error as IPrismaError));
     }
@@ -166,7 +192,7 @@ export class UserController {
         return;
       }
 
-      const { userId, categoryId, ageRestricted, isPrivate, title, description, keywords } = req.body;
+      const { userId, categoryId, isAgeRestricted, isPrivate, title, description, keywords } = req.body;
 
       // User existence check
       const user = await prisma.user.findUnique({
@@ -183,57 +209,57 @@ export class UserController {
       const videoFileName = `${timestamp}.mp4`;
       const thumbnailFileName = `${timestamp}.jpeg`;
 
-      // Process thumbnail
-      const thumbnailOutputPath = `uploads/${user.username}/thumbnail/${thumbnailFileName}`;
-      await sharp(thumbnailFile.path)
-        .resize(1280, 720, {
-          fit: "cover",
-          position: "centre",
-        })
-        .jpeg({ quality: 80 })
-        .toFile(thumbnailOutputPath);
+      const paths = {
+        thumbnailDB: `${user.username}/thumbnail/${thumbnailFileName}`,
+        thumbnail: `uploads/${user.username}/thumbnail/${thumbnailFileName}`,
+        videoDB: `${user.username}/video/${videoFileName}`,
+        video: `uploads/${user.username}/video/${videoFileName}`,
+      };
 
-      // Check thumbnail size not exceeding 2MB
-      const thumbnailStats = await fs.promises.stat(thumbnailOutputPath);
-      if (thumbnailStats.size > 2 * 1024 * 1024) {
-        // 2MB
+      // Ensure directories exist
+      await fs.promises.mkdir(`uploads/${user.username}/thumbnail`, { recursive: true });
+      await fs.promises.mkdir(`uploads/${user.username}/video`, { recursive: true });
+
+      // Move files to their respective directories
+      await sharp(thumbnailFile.path)
+        .resize(1280, 720, { fit: "cover", position: "centre" }) // Resize to 1280x720
+        .jpeg({ quality: 80 })
+        .toFile(paths.thumbnail);
+
+      // Delete the old image
+      await fs.promises.unlink(thumbnailFile.path);
+
+      if ((await fs.promises.stat(paths.thumbnail)).size > 10 * 1024 * 1024) {
         res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "thumbnailTooLarge"));
         return;
       }
 
-      // Move video file to final destination
-      const videoOutputPath = `uploads/${user.username}/video/${videoFileName}`;
-      await fs.promises.rename(videoFile.path, videoOutputPath);
+      await fs.promises.rename(videoFile.path, paths.video);
 
-      // Check video size not exceeding 500MB
       if (videoFile.size > 500 * 1024 * 1024) {
         res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoTooLarge"));
         return;
       }
 
-      // Get video duration
-      const duration = await new Promise<number>((resolve, reject) => {
-        ffmpeg.ffprobe(videoOutputPath, (err, metadata) => {
-          if (err) reject(err);
-          resolve(metadata.format.duration || 0);
-        });
-      });
+      const duration = await new Promise<number>((resolve, reject) =>
+        ffmpeg.ffprobe(paths.video, (err, metadata) =>
+          err ? reject(err) : resolve(metadata.format.duration || 0)
+        )
+      );
 
-      // Create video record
       await prisma.video.create({
         data: {
           userId: Number(userId),
           categoryId: Number(categoryId),
-          ageRestricted,
+          isAgeRestricted,
           isPrivate,
           title,
           description,
           keywords,
-          size: videoFile.size.toString(),
-          duration: duration.toString(),
-          videoPath: videoOutputPath,
-          thumbnailPath: thumbnailOutputPath,
-          viewCount: "0",
+          size: videoFile.size,
+          duration: duration.toFixed(4), // Round to 3 decimal places
+          videoPath: paths.videoDB,
+          thumbnailPath: paths.thumbnailDB,
           uuid: generateUUID(),
         },
       });

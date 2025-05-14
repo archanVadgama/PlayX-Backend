@@ -67,7 +67,7 @@ declare global {
   interface UploadVideo {
     userId: number;
     categoryId: string;
-    ageRestricted: boolean;
+    isAgeRestricted: boolean;
     isPrivate: boolean;
     thumbnailPath: string;
     videoPath: string;
@@ -77,6 +77,25 @@ declare global {
     size: string;
     duration: string;
   }
+  export interface VideoUser {
+    username: string;
+    displayName: string;
+    channelName: string;
+    image: string;
+  }
 
+  export interface Video {
+    profileImg: string;
+    userId: number;
+    uuid: string;
+    title: string;
+    duration: number;
+    channelName: string;
+    viewCount: string;
+    createdAt: string;
+    thumbnailPath: string;
+    videoPath: string;
+    user: VideoUser;
+  }
   type ResponseCodeMap = Record<ResponseCategory, Record<string, IResponseCode>>;
 }

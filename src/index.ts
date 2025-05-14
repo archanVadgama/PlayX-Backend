@@ -10,9 +10,13 @@ import cookieParser from "cookie-parser";
 import { requestContext } from "./api/v1/middleware/requestContext.js";
 import { errorMiddleware } from "./api/v1/middleware/errorHandler.js";
 import "./api/v1/global.js";
+import path from "path";
 
 const ENV = process.env;
 const app = express();
+
+// Middleware to serve static files from the "uploads" directory
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Define CORS options to control cross-origin requests
 const corsOptions = {
@@ -34,7 +38,6 @@ const corsOptions = {
   // Return a 200 status code for successful preflight requests
   optionsSuccessStatus: 200,
 };
-
 // Middleware
 app.use(helmet()); // Security middleware to set various HTTP headers
 
