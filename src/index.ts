@@ -1,22 +1,18 @@
-import "express-async-errors"; // for async error handling
-import express from "express";
-import "dotenv/config";
-import auth from "./api/v1/routes/auth.js";
-import admin from "./api/v1/routes/admin.js";
-import user from "./api/v1/routes/user.js";
-import helmet from "helmet";
-import cors from "cors";
 import cookieParser from "cookie-parser";
-import { requestContext } from "./api/v1/middleware/requestContext.js";
-import { errorMiddleware } from "./api/v1/middleware/errorHandler.js";
+import cors from "cors";
+import "dotenv/config";
+import express from "express";
+import "express-async-errors"; // for async error handling
+import helmet from "helmet";
 import "./api/v1/global.js";
-import path from "path";
+import { errorMiddleware } from "./api/v1/middleware/errorHandler.js";
+import { requestContext } from "./api/v1/middleware/requestContext.js";
+import admin from "./api/v1/routes/admin.js";
+import auth from "./api/v1/routes/auth.js";
+import user from "./api/v1/routes/user.js";
 
 const ENV = process.env;
 const app = express();
-
-// Middleware to serve static files from the "uploads" directory
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Define CORS options to control cross-origin requests
 const corsOptions = {
@@ -50,6 +46,7 @@ app.use(cookieParser()); // Parse cookies from requests
 app.use("/api/v1", auth); // Auth routes with the /api/v1 prefix
 app.use("/api/v1", admin); // Admin routes with the /api/v1 prefix
 app.use("/api/v1", user); // User routes with the /api/v1 prefix
+app.use("/stream", user); // User video streaming routes
 
 app.use(errorMiddleware); // Centralized error-handling middleware
 

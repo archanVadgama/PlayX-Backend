@@ -8,14 +8,6 @@ type TStringField = (
   [key: string]: { errorMessage?: string; options?: { min: number; max: number } } | boolean;
 };
 
-type TIntField = (
-  min: number,
-  max: number,
-  field: string
-) => {
-  [key: string]: { errorMessage?: string; options?: { min: number; max: number } } | boolean;
-};
-
 /**
  * String field validation
  *
@@ -35,39 +27,7 @@ const stringField: TStringField = (min: number, max: number, field: string) => (
   },
 });
 
-/**
- * Integer field validation
- *
- * @param {number} min
- * @param {number} max
- * @param {string} field
- */
-const intField: TIntField = (min: number, max: number, field: string) => ({
-  trim: true,
-  escape: true,
-  notEmpty: {
-    errorMessage: `${field} is required`,
-  },
-  isInt: {
-    errorMessage: `${field} will be a number`,
-  },
-  isLength: {
-    options: { min, max },
-    errorMessage: `${field} must be between ${min} to ${max} characters`,
-  },
-});
-
-const emailField: { [key: string]: { errorMessage?: string } | boolean } = {
-  trim: true,
-  escape: true,
-  notEmpty: {
-    errorMessage: "Email is required",
-  },
-  isEmail: {
-    errorMessage: "Invalid email",
-  },
-};
-
+// Validation for uploading a video
 const uploadVideoSchema: Schema = {
   userId: stringField(1, 200, "User ID"),
   categoryId: stringField(1, 200, "Category ID"),
@@ -115,39 +75,6 @@ const uploadVideoSchema: Schema = {
     },
     toBoolean: true, // It will convert the value to boolean
   },
-  // video: {
-  //   notEmpty: {
-  //     errorMessage: "Video is required",
-  //   },
-  //   custom: {
-  //     options: (value: string, { req }) => {
-  //       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-  //       const videoFile = files?.["video"]?.[0];
-  //       if (!videoFile) {
-  //         throw new Error("Video file is missing");
-  //       }
-  //       return true;
-  //     },
-  //   },
-  // },
-  // thumbnail: {
-  //   notEmpty: {
-  //     errorMessage: "Thumbnail is required",
-  //   },
-  //   custom: {
-  //     options: (value: string, { req }) => {
-  //       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-  //       const thumbnailFile = files?.["thumbnail"]?.[0];
-  //       if (!thumbnailFile) {
-  //         throw new Error("Thumbnail file is missing");
-  //       }
-  //       if (thumbnailFile.size > 2 * 1024 * 1024) {
-  //         throw new Error("Thumbnail size exceeds 2MB");
-  //       }
-  //       return true;
-  //     },
-  //   },
-  // },
 };
 
 export { uploadVideoSchema };

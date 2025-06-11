@@ -52,6 +52,7 @@ export const ResponseCodes: ResponseCodeMap = {
     validationFailed: { status: false, message: "Validation Failed" },
     userNotFound: { status: false, message: "User Not Found" },
     videoNotFound: { status: false, message: "Video Not Found" },
+    thumbnailNotFound: { status: false, message: "Thumbnail Not Found" },
     dataNotFound: { status: false, message: "Data Not Found" },
     invalidUserId: { status: false, message: "Invalid User Id" },
     invalidVideoId: { status: false, message: "Invalid Video Id" },
@@ -63,5 +64,6 @@ export const ResponseCodes: ResponseCodeMap = {
     videoUploadFailed: { status: false, message: "Video Upload Failed" },
     videoIsRequired: { status: false, message: "Video is Required" },
     thumbnailIsRequired: { status: false, message: "Thumbnail is Required" },
+    requiredParamsNotFound: { status: false, message: "Required parameters not found" },
   },
 };
