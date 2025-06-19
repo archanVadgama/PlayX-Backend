@@ -89,3 +89,7 @@ npx prisma migrate dev
 ```sh
 npm run dev
 ```
+
+## Document References
+- [User Stories](https://simformsolutionspvtltd-my.sharepoint.com/:w:/r/personal/archan_vadgama_simformsolutions_com/_layouts/15/Doc.aspx?sourcedoc=%7BFA1D6C86-C15D-473F-86CB-CC55333739CA%7D&file=Archan%20Vadgama%20-%20Video%20Sharing%20Platform.docx&action=default&mobileredirect=true&DefaultItemOpen=1&ct=1750330605599&wdOrigin=OFFICECOM-WEB.START.EDGEWORTH&cid=732ef863-8229-47a8-be05-4c815f085dee&wdPreviousSessionSrc=HarmonyEmbed&wdPreviousSession=0ff8b3be-a721-46c7-bf90-f6c6feb624f4)
+- [Database Design](https://dbdiagram.io/d/PlayX-Video-Sharing-Platform-67c95db6263d6cf9a06b6bfd)
