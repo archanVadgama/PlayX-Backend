@@ -65,5 +65,7 @@ export const ResponseCodes: ResponseCodeMap = {
     videoIsRequired: { status: false, message: "Video is Required" },
     thumbnailIsRequired: { status: false, message: "Thumbnail is Required" },
     requiredParamsNotFound: { status: false, message: "Required parameters not found" },
+    searchQueryRequired: { status: false, message: "Search Query Required" },
+    searchQueryTooShort: { status: false, message: "Enter at least 3 characters for result" },
   },
 };

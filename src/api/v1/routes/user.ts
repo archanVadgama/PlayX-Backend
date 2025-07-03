@@ -11,6 +11,7 @@ const router = express.Router();
 // [OPEN Routes]
 router.get("/:username/video/:filename", VideoController.videoStream);
 router.get("/:username/thumbnail/:filename", VideoController.getThumbnail);
+router.get("/search", VideoController.searchResult);
 router.get("/feed", VideoController.getFeedData);
 router.get("/watch/:uuid", VideoController.getVideo);
 

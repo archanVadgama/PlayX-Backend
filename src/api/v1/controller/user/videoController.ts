@@ -77,6 +77,148 @@ async function storeFilesInServe(
   await fs.promises.rename(video.path, paths.video);
 }
 
+/**
+ * Format video data to include custom paths and convert numeric fields to appropriate types.
+ *
+ * @param {VideoItem} video
+ * @return {*}  {VideoItem}
+ */
+const formatVideoData = (video: VideoItem): VideoItem => ({
+  ...video,
+  duration: Number(video.duration),
+  viewCount: Number(video.viewCount),
+  videoPath: `${CUSTOM_BASE_PATH}/${video.videoPath}`,
+  thumbnailPath: `${CUSTOM_BASE_PATH}/${video.thumbnailPath}`,
+});
+
+/**
+ * Fetch formatted feed videos based on search term, sort, duration range, and upload date.
+ *
+ * @param {string} [searchTerm]
+ * @param {("createdAt" | "viewCount" | "duration")} [sort]
+ * @param {{ min: number; max: number }} [durationRange]
+ * @param {{ after: Date }} [uploadRange]
+ * @return {*}  {Promise<VideoItem[]>}
+ */
+const fetchFormattedFeedVideos = async (
+  searchTerm?: string,
+  sort?: "createdAt" | "viewCount" | "duration",
+  durationRange?: { min: number; max: number },
+  uploadRange?: { after: Date }
+): Promise<VideoItem[]> => {
+  const orderByField = sort || "createdAt";
+
+  const whereCondition: {
+    isPrivate: boolean;
+    deletedAt: null;
+    createdAt?: { gte: Date };
+    user: {
+      isBlock: boolean;
+      isAdmin: boolean;
+      suspendTill: null;
+      deletedAt: null;
+    };
+    OR?: Array<{
+      title?: { contains: string; mode: "insensitive" };
+      keywords?: { contains: string; mode: "insensitive" };
+    }>;
+    duration?: { gte: number; lte?: number };
+  } = {
+    isPrivate: false,
+    deletedAt: null,
+    user: {
+      isBlock: false,
+      isAdmin: false,
+      suspendTill: null,
+      deletedAt: null,
+    },
+  };
+
+  if (searchTerm) {
+    whereCondition.OR = [
+      { title: { contains: searchTerm, mode: "insensitive" } },
+      { keywords: { contains: searchTerm, mode: "insensitive" } },
+    ];
+  }
+
+  if (durationRange) {
+    whereCondition.duration = {
+      gte: durationRange.min,
+      lte: durationRange.max !== Infinity ? durationRange.max : undefined,
+    };
+  }
+
+  if (uploadRange) {
+    whereCondition.createdAt = {
+      gte: uploadRange.after,
+    };
+  }
+
+  const videos = await prisma.video.findMany({
+    where: whereCondition,
+    orderBy: {
+      [orderByField]: "desc",
+    },
+    select: {
+      userId: true,
+      uuid: true,
+      title: true,
+      duration: true,
+      viewCount: true,
+      createdAt: true,
+      description: true,
+      videoPath: true,
+      thumbnailPath: true,
+      user: {
+        select: {
+          username: true,
+          displayName: true,
+          channelName: true,
+          image: true,
+        },
+      },
+    },
+  });
+
+  return videos.map(formatVideoData);
+};
+
+/**
+ * Fetch a single video by its UUID and format the data.
+ *
+ * @param {string} uuid
+ * @return {*}  {(Promise<VideoItem | null>)}
+ */
+const fetchFormattedVideoByUUID = async (uuid: string): Promise<VideoItem | null> => {
+  const video = await prisma.video.findUnique({
+    where: {
+      uuid,
+      isPrivate: false,
+      deletedAt: null,
+    },
+    select: {
+      userId: true,
+      uuid: true,
+      title: true,
+      duration: true,
+      viewCount: true,
+      createdAt: true,
+      videoPath: true,
+      thumbnailPath: true,
+      user: {
+        select: {
+          username: true,
+          displayName: true,
+          channelName: true,
+          image: true,
+        },
+      },
+    },
+  });
+
+  return video ? formatVideoData(video) : null;
+};
+
 export class VideoController {
   /**
    * Get data for the home page feed
@@ -89,50 +231,10 @@ export class VideoController {
    */
   static readonly getFeedData: RequestHandler = async (req: Request, res: Response) => {
     try {
-      const feedData = await prisma.video.findMany({
-        where: {
-          // isAgeRestricted: false,
-          isPrivate: false,
-          deletedAt: null, // Only non-deleted videos
-          user: {
-            isBlock: false,
-            isAdmin: false,
-            suspendTill: null,
-            deletedAt: null,
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          userId: true,
-          uuid: true,
-          title: true,
-          duration: true,
-          viewCount: true,
-          createdAt: true,
-          videoPath: true,
-          thumbnailPath: true,
-          user: {
-            select: {
-              username: true,
-              displayName: true,
-              channelName: true,
-              image: true,
-            },
-          },
-        },
-      });
+      // Fetch formatted feed videos with custom paths
+      const feedDataWithCustomPaths = await fetchFormattedFeedVideos();
 
-      const feedDataWithCustomPaths = feedData.map((video) => ({
-        ...video,
-        duration: Number(video.duration),
-        viewCount: Number(video.viewCount),
-        videoPath: `${CUSTOM_BASE_PATH}/${video.videoPath}`,
-        thumbnailPath: `${CUSTOM_BASE_PATH}/${video.thumbnailPath}`,
-      }));
-
-      if (!feedData) {
+      if (!feedDataWithCustomPaths || feedDataWithCustomPaths.length === 0) {
         res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "dataNotFound"));
         return;
       }
@@ -162,42 +264,85 @@ export class VideoController {
       return;
     }
     try {
-      const videoData = await prisma.video.findUnique({
-        where: { uuid: videoUUID.toString(), isPrivate: false, deletedAt: null },
-        select: {
-          uuid: true,
-          title: true,
-          duration: true,
-          viewCount: true,
-          createdAt: true,
-          videoPath: true,
-          thumbnailPath: true,
-          user: {
-            select: {
-              username: true,
-              displayName: true,
-              channelName: true,
-              image: true,
-            },
-          },
-        },
-      });
+      // Fetch the video data by UUID
+      const videoData = await fetchFormattedVideoByUUID(videoUUID);
 
       if (!videoData) {
         res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoNotFound"));
         return;
       }
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", videoData));
+    } catch (error) {
+      throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
 
-      const feedDataWithCustomPaths = {
-        ...videoData,
-        duration: Number(videoData.duration),
-        viewCount: Number(videoData.viewCount),
-        videoPath: `${CUSTOM_BASE_PATH}/${videoData.videoPath}`,
-        thumbnailPath: `${CUSTOM_BASE_PATH}/${videoData.thumbnailPath}`,
+  /**
+   * Search for videos based on query parameters
+   *
+   * @static
+   * @param {Request} req
+   * @param {Response} res
+   * @type {RequestHandler}
+   * @memberof VideoController
+   */
+  static readonly searchResult: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const queryParams = { ...req.query };
+
+      const searchQuery = typeof queryParams.search_query === "string" ? queryParams.search_query.trim() : "";
+
+      if (!searchQuery) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "searchQueryRequired"));
+      }
+
+      if (searchQuery.length < 3) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "searchQueryTooShort"));
+      }
+
+      // Map query parameters to their respective fields
+      const sortCodeMap: Record<string, "viewCount" | "createdAt" | "duration"> = {
+        s_vc_k7f: "viewCount",
+        s_udt_6cx: "createdAt",
+        s_dur_q0e: "duration",
       };
-      res
-        .status(StatusCodes.OK)
-        .json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", feedDataWithCustomPaths));
+
+      // Decode the sort_by parameter
+      const decodedSortByRaw = typeof queryParams.sort_by === "string" ? queryParams.sort_by : "";
+      const sortBy = sortCodeMap[decodedSortByRaw] || "createdAt"; // default fallback
+
+      // Map duration and upload date codes to their respective ranges
+      const durationCodeMap: Record<string, { min: number; max: number }> = {
+        d_u4_9z3: { min: 0, max: 4 * 60 }, // under 4 minutes
+        d_420_j5k: { min: 4 * 60, max: 20 * 60 }, // 4 - 20 minutes
+        d_o20_m1n: { min: 20 * 60 + 1, max: Infinity }, // over 20 minutes
+      };
+
+      // Decode the duration parameter
+      const decodedDuration = typeof queryParams.duration === "string" ? queryParams.duration : "";
+      const durationRange = durationCodeMap[decodedDuration];
+
+      // If duration is not provided, set a default range
+      const uploadCodeMap: Record<string, { after: Date }> = {
+        u_lh_x9z: { after: new Date(Date.now() - 60 * 60 * 1000) }, // Last hour
+        u_td_7s8: { after: new Date(new Date().setHours(0, 0, 0, 0)) }, // Today
+        u_tw_g6q: { after: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // This week
+        u_tm_k2v: { after: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // This month (approx)
+        u_ty_p4b: { after: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) }, // This year (approx)
+      };
+
+      // Decode the upload_date parameter
+      const decodedUpload = typeof queryParams.upload_date === "string" ? queryParams.upload_date : "";
+      const uploadRange = uploadCodeMap[decodedUpload];
+
+      // It will use to fetch the formatted feed videos based on search query, sort, duration, and upload date
+      const searchResults = await fetchFormattedFeedVideos(searchQuery, sortBy, durationRange, uploadRange);
+
+      if (!searchResults || searchResults.length === 0) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "dataNotFound"));
+      }
+
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", searchResults));
     } catch (error) {
       throw new Error(prismaErrorHandler(error as IPrismaError));
     }
