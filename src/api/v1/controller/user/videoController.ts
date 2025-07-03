@@ -543,4 +543,25 @@ export class VideoController {
     res.writeHead(200, head);
     fs.createReadStream(thumbnailPath).pipe(res);
   };
+
+  static readonly viewCount: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    const videoUUID = req.params.uuid;
+
+    if (!videoUUID) {
+      res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidVideoId"));
+      return;
+    }
+
+    try {
+      // Increment the view count for the video
+      await prisma.video.update({
+        where: { uuid: videoUUID },
+        data: { viewCount: { increment: 1 } },
+      });
+
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "viewCountUpdated"));
+    } catch (error) {
+      throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
 }
