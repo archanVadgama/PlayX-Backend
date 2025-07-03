@@ -1,15 +1,11 @@
 import { Request, Response, RequestHandler } from "express";
-import { validationResult } from "express-validator";
 import { StatusCodes } from "http-status-codes";
 import { PrismaClient } from "@prisma/client";
 import { prismaErrorHandler } from "../../utility/prismaErrorHandler.js";
 import "dotenv/config";
 
 const prisma = new PrismaClient();
-const ENV = process.env;
-const NODE_ENV = ENV.NODE_ENV;
 
-// under development
 export class UserController {
   /**
    * @description Get user by id

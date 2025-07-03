@@ -1,4 +1,5 @@
-export {};
+import { Decimal } from "@prisma/client/runtime/library";
+
 enum ResponseCategory {
   SUCCESS = "success",
   AUTH = "auth",
@@ -12,6 +13,12 @@ declare global {
     username: string;
     password: string;
     rememberMe: boolean;
+  }
+  interface SearchQuery {
+    search_query: string;
+    upload_date?: string;
+    duration?: string;
+    sort_by?: string;
   }
   interface IResetPassword {
     resetToken: string;
@@ -64,5 +71,57 @@ declare global {
     cityId?: number;
   }
 
+  interface UploadVideo {
+    userId: number;
+    categoryId: string;
+    isAgeRestricted: boolean;
+    isPrivate: boolean;
+    thumbnailPath: string;
+    videoPath: string;
+    title: string;
+    description: string;
+    keywords: string;
+    size: string;
+    duration: string;
+  }
+  interface VideoUser {
+    username: string;
+    displayName: string;
+    channelName: string;
+    image: string;
+  }
+
+  interface Video {
+    profileImg: string;
+    userId: number;
+    uuid: string;
+    title: string;
+    duration: number;
+    channelName: string;
+    viewCount: string;
+    createdAt: string;
+    thumbnailPath: string;
+    videoPath: string;
+    user: VideoUser;
+  }
+
+  interface UserInfo {
+    username: string;
+    displayName: string;
+    channelName: string | null;
+    image: string | null;
+  }
+
+  interface VideoItem {
+    userId: number;
+    uuid: string;
+    title: string;
+    duration: number | string | Decimal;
+    viewCount: number | string | bigint;
+    createdAt: Date | string;
+    videoPath: string;
+    thumbnailPath: string;
+    user: UserInfo;
+  }
   type ResponseCodeMap = Record<ResponseCategory, Record<string, IResponseCode>>;
 }
