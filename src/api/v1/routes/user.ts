@@ -14,6 +14,7 @@ router.get("/:username/thumbnail/:filename", VideoController.getThumbnail);
 router.get("/search", VideoController.searchResult);
 router.get("/feed", VideoController.getFeedData);
 router.get("/watch/:uuid", VideoController.getVideo);
+router.post("/view-count/:uuid", VideoController.viewCount);
 
 // [PROTECTED Routes]
 router.get("/user/:id", checkLogin, UserController.getUser);

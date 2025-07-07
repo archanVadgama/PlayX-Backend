@@ -544,12 +544,11 @@ export class VideoController {
     fs.createReadStream(thumbnailPath).pipe(res);
   };
 
-  static readonly viewCount: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  static readonly viewCount: RequestHandler = async (req: Request, res: Response) => {
     const videoUUID = req.params.uuid;
-
+    logHttp("info", videoUUID);
     if (!videoUUID) {
       res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidVideoId"));
-      return;
     }
 
     try {
@@ -558,7 +557,6 @@ export class VideoController {
         where: { uuid: videoUUID },
         data: { viewCount: { increment: 1 } },
       });
-
       res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "viewCountUpdated"));
     } catch (error) {
       throw new Error(prismaErrorHandler(error as IPrismaError));

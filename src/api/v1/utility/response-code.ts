@@ -28,6 +28,7 @@ export const ResponseCodes: ResponseCodeMap = {
     },
     accessTokenValid: { status: true, message: "Access Token not expired" },
     videoUploaded: { status: true, message: "Video Uploaded Successfully" },
+    viewCountUpdated: { status: true, message: "View Count Updated Successfully" },
   },
   [ResponseCategory.AUTH]: {
     invalidCredentials: {
