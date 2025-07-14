@@ -1,0 +1,228 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  isBlock      Boolean   @default(false) // True: permanent deactivation of account, cant upload new video
+  isAdmin      Boolean   @default(false) // Admin can assign new admin
+  image        String?
+  username     String    @unique @db.VarChar(50)
+  displayName  String    @db.VarChar(50) // First name and last name
+  channelName  String?   @db.VarChar(50)
+  bio          String?   @db.VarChar(200)
+  email        String?   @unique // required
+  mobileNumber BigInt    @unique
+  password     String
+  landmark     String?
+  addressLine1 String?
+  addressLine2 String?
+  countryId    Int?
+  stateId      Int?
+  cityId       Int?
+  resetToken   String?
+  suspendTill  DateTime?
+  deletedAt    DateTime?
+  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+
+  country Country? @relation(fields: [countryId], references: [id]) // Relation to Country
+  state   State?   @relation(fields: [stateId], references: [id]) // Relation to State
+  city    City?    @relation(fields: [cityId], references: [id]) // Relation to City
+
+  refreshToken RefreshToken[] @relation("UserRefreshToken")
+  subscribers  Subscribers[]  @relation("UserSubscribers")
+  subscribedTo Subscribers[]  @relation("SubscribedToUser")
+  videos       Video[] // Back relation to Video
+  likes        Likes[] // Back relation to Likes
+  comments     Comment[] // Back relation to Comment
+  reports      Report[]       @relation("UserReport") // Back relation to Report
+  watchHistory WatchHistory[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String
+  expiredAt DateTime
+
+  user User @relation("UserRefreshToken", fields: [userId], references: [id])
+}
+
+model Subscribers {
+  id               Int      @id @default(autoincrement())
+  isMuted          Boolean  @default(false)
+  userId           Int
+  subscribedUserId Int
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  user           User @relation("UserSubscribers", fields: [userId], references: [id])
+  subscribedUser User @relation("SubscribedToUser", fields: [subscribedUserId], references: [id])
+}
+
+model Country {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  users User[] // Back relation to User
+}
+
+model State {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  users User[] // Back relation to User
+}
+
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  users User[] // Back relation to User
+}
+
+model Video {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  categoryId    Int
+  uuid          String    @unique // UUID for video
+  isAgeRestricted Boolean   @default(false)
+  isUploaded    Boolean   @default(false) // It will true if video is uploaded to AWS
+  isPrivate     Boolean   @default(true) // Only `user` can change this
+  thumbnailPath String
+  videoPath     String
+  title         String    // This will also be used in SEO
+  description   String    // This will also be used in SEO
+  keywords      String
+  viewCount     BigInt    @default(0) // Total views
+  size          BigInt    // Size in bytes
+  duration      Decimal    // Duration will be used for viewCount 1/3 part of the video
+  deletedAt     DateTime?
+  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+
+  user     User     @relation(fields: [userId], references: [id]) // Relation to User
+  category Category @relation(fields: [categoryId], references: [id]) // Relation to Category
+
+  likes    Likes[]   @relation("VideoLikes")
+  comments Comment[] @relation("VideoComments")
+  reports  Report[]  @relation("VideoReport") // Back relation to Report
+  watchHistory WatchHistory[]
+}
+
+model Category {
+  id        Int           @id @default(autoincrement())
+  name      String        @db.VarChar(50)
+  status    CurrentStatus @default(Active) // If we remove this then we have to remove from video table
+  image     String?       @db.VarChar(255) // Image URL
+  deletedAt DateTime?
+  updatedAt DateTime      @updatedAt
+  createdAt DateTime      @default(now())
+
+  videos Video[] // Back relation to Video
+}
+
+enum CurrentStatus {
+  Active
+  Inactive
+}
+
+
+model WatchHistory {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  videoId       Int
+  lastTimeStamp Int      // Last watched timestamp (in seconds)
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id])
+  video Video @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId]) // One user can only have one watch history per video
+}
+
+model Likes {
+  id          Int            @id @default(autoincrement())
+  status      ReferenceTypes
+  userId      Int
+  referenceId Int
+  isLiked     Boolean // True: Liked, False: Disliked
+  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime       @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  video   Video?   @relation("VideoLikes", fields: [referenceId], references: [id], map: "Likes_Video_referenceId_fkey")
+  comment Comment? @relation("CommentLikes", fields: [referenceId], references: [id], map: "Likes_Comment_referenceId_fkey")
+}
+
+enum ReferenceTypes {
+  Comment
+  Video
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  videoId   Int
+  comment   String   @db.VarChar(255)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  video   Video    @relation("VideoComments", fields: [videoId], references: [id])
+  likes   Likes[]  @relation("CommentLikes")
+  reports Report[] @relation("CommentReport") // Back relation to Report
+}
+
+model Report {
+  id          Int          @id @default(autoincrement())
+  type        ReportType
+  reviewedBy  Int // admin who review this
+  isDeleted   Boolean      @default(false) // True: deleted by admin
+  referenceId Int // userId, videoId, commentId
+  reason      ReportReason // Enum
+  otherReason String? // If reason is "Other" then this will be used
+  deletedAt   DateTime? // If isDeleted is true then this will be set
+  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now())
+
+  user    User     @relation("UserReport", fields: [referenceId], references: [id], map: "Report_User_referenceId_fkey")
+  video   Video    @relation("VideoReport", fields: [referenceId], references: [id], map: "Report_Video_referenceId_fkey")
+  comment Comment? @relation("CommentReport", fields: [referenceId], references: [id], map: "Report_Comment_referenceId_fkey")
+}
+
+// Enum for report reason type
+enum ReportReason {
+  WrongInformation
+  AbusiveContent
+  ViolatePolicy
+  Humiliation
+  Other
+}
+
+// Enum for report type
+enum ReportType {
+  User
+  Video
+  Comment
+}
