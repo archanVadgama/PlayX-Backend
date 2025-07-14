@@ -8,6 +8,10 @@ import { StatusCodes } from "http-status-codes";
 import path from "path";
 import sharp from "sharp";
 import { prismaErrorHandler } from "../../utility/prismaErrorHandler.js";
+import { storeFilesInS3 } from "../../services/s3Service.js";
+import { generatePresignedUploadUrl, getSignedS3Url } from "../../services/s3PresignService.js";
+
+const ENV = process.env;
 
 // Extend the Request interface to include the 'files' property
 declare module "express-serve-static-core" {
@@ -16,7 +20,8 @@ declare module "express-serve-static-core" {
   }
 }
 
-const CUSTOM_BASE_PATH = `${process.env.APP_URL}:${process.env.PORT}/stream`;
+// const CUSTOM_BASE_PATH = `${ENV.APP_URL}:${ENV.PORT}/stream`;
+const CUSTOM_BASE_PATH = `https://${ENV.AWS_BUCKET_NAME}.s3.${ENV.AWS_REGION}.amazonaws.com`;
 const prisma = new PrismaClient();
 
 /**
@@ -47,6 +52,7 @@ async function cropThumbnail(thumbnailPath: string, outputPath: string): Promise
  * @param {Express.Multer.File} video
  * @param {Express.Multer.File} thumbnail
  * @return {*}
+ 
  */
 async function storeFilesInServe(
   res: Response,
@@ -83,13 +89,18 @@ async function storeFilesInServe(
  * @param {VideoItem} video
  * @return {*}  {VideoItem}
  */
-const formatVideoData = (video: VideoItem): VideoItem => ({
-  ...video,
-  duration: Number(video.duration),
-  viewCount: Number(video.viewCount),
-  videoPath: `${CUSTOM_BASE_PATH}/${video.videoPath}`,
-  thumbnailPath: `${CUSTOM_BASE_PATH}/${video.thumbnailPath}`,
-});
+const formatVideoData = async (video: VideoItem): Promise<VideoItem> => {
+  const signedVideoUrl = await getSignedS3Url(video.videoPath);
+  const signedThumbnailUrl = await getSignedS3Url(video.thumbnailPath);
+
+  return {
+    ...video,
+    duration: Number(video.duration),
+    viewCount: Number(video.viewCount),
+    videoPath: signedVideoUrl,
+    thumbnailPath: signedThumbnailUrl,
+  };
+};
 
 /**
  * Fetch formatted feed videos based on search term, sort, duration range, and upload date.
@@ -101,6 +112,7 @@ const formatVideoData = (video: VideoItem): VideoItem => ({
  * @return {*}  {Promise<VideoItem[]>}
  */
 const fetchFormattedFeedVideos = async (
+  userId?: number | null,
   searchTerm?: string,
   sort?: "createdAt" | "viewCount" | "duration",
   durationRange?: { min: number; max: number },
@@ -109,7 +121,9 @@ const fetchFormattedFeedVideos = async (
   const orderByField = sort || "createdAt";
 
   const whereCondition: {
+    userId?: number;
     isPrivate: boolean;
+    isUploaded: boolean;
     deletedAt: null;
     createdAt?: { gte: Date };
     user: {
@@ -125,6 +139,7 @@ const fetchFormattedFeedVideos = async (
     duration?: { gte: number; lte?: number };
   } = {
     isPrivate: false,
+    isUploaded: true,
     deletedAt: null,
     user: {
       isBlock: false,
@@ -133,6 +148,11 @@ const fetchFormattedFeedVideos = async (
       deletedAt: null,
     },
   };
+
+  // 🔍 Filter by userId if provided
+  if (userId) {
+    whereCondition.userId = userId;
+  }
 
   if (searchTerm) {
     whereCondition.OR = [
@@ -180,7 +200,7 @@ const fetchFormattedFeedVideos = async (
     },
   });
 
-  return videos.map(formatVideoData);
+  return Promise.all(videos.map(formatVideoData));
 };
 
 /**
@@ -194,13 +214,16 @@ const fetchFormattedVideoByUUID = async (uuid: string): Promise<VideoItem | null
     where: {
       uuid,
       isPrivate: false,
+      isUploaded: true,
       deletedAt: null,
     },
     select: {
       userId: true,
+      id: true,
       uuid: true,
       title: true,
       duration: true,
+      isAgeRestricted: true,
       viewCount: true,
       createdAt: true,
       videoPath: true,
@@ -336,13 +359,62 @@ export class VideoController {
       const uploadRange = uploadCodeMap[decodedUpload];
 
       // It will use to fetch the formatted feed videos based on search query, sort, duration, and upload date
-      const searchResults = await fetchFormattedFeedVideos(searchQuery, sortBy, durationRange, uploadRange);
+      const searchResults = await fetchFormattedFeedVideos(
+        null,
+        searchQuery,
+        sortBy,
+        durationRange,
+        uploadRange
+      );
 
       if (!searchResults || searchResults.length === 0) {
         res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "dataNotFound"));
       }
 
       res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", searchResults));
+    } catch (error) {
+      throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
+
+  static readonly myVideos: RequestHandler = async (req: Request, res: Response) => {
+    const userId = Number(req.params.userId);
+    if (!userId) {
+      res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidUserId"));
+    }
+
+    try {
+      const myVideos = await prisma.video.findMany({
+        where: { userId, deletedAt: null },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          userId: true,
+          uuid: true,
+          isAgeRestricted: true,
+          isPrivate: true,
+          isUploaded: true,
+          title: true,
+          duration: true,
+          viewCount: true,
+          createdAt: true,
+          description: true,
+          videoPath: true,
+          thumbnailPath: true,
+          user: {
+            select: {
+              username: true,
+              displayName: true,
+              channelName: true,
+              image: true,
+            },
+          },
+        },
+      });
+      const data = await Promise.all(myVideos.map(formatVideoData));
+
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", data));
     } catch (error) {
       throw new Error(prismaErrorHandler(error as IPrismaError));
     }
@@ -402,6 +474,17 @@ export class VideoController {
         return;
       }
 
+      if (videoFile.size > 500 * 1024 * 1024) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoTooLarge"));
+        return;
+      }
+
+      const duration = await new Promise<number>((resolve, reject) =>
+        ffmpeg.ffprobe(videoFile.path, (err, metadata) =>
+          err ? reject(err) : resolve(metadata.format.duration || 0)
+        )
+      );
+
       const timestamp = Date.now();
       const videoFileName = `${timestamp}.mp4`;
       const thumbnailFileName = `${timestamp}.jpeg`;
@@ -414,19 +497,10 @@ export class VideoController {
       };
 
       // Store files in the server
-      await storeFilesInServe(res, user.username, paths, videoFile, thumbnailFile);
+      await storeFilesInS3(res, user.username, paths, videoFile, thumbnailFile);
 
-      if (videoFile.size > 500 * 1024 * 1024) {
-        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoTooLarge"));
-        return;
-      }
-
-      const duration = await new Promise<number>((resolve, reject) =>
-        ffmpeg.ffprobe(paths.video, (err, metadata) =>
-          err ? reject(err) : resolve(metadata.format.duration || 0)
-        )
-      );
-
+      logHttp("info", paths.videoDB);
+      logHttp("info", paths.thumbnailDB);
       await prisma.video.create({
         data: {
           userId: Number(userId),
@@ -444,6 +518,121 @@ export class VideoController {
         },
       });
 
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "videoUploaded"));
+    } catch (error) {
+      throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
+
+  static readonly getPresignedUrl: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Validation check
+      const result = validationResult(req);
+      if (!result.isEmpty()) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            apiResponse(
+              ResponseCategory.ERROR,
+              "validationFailed",
+              result.formatWith((msg) => msg.msg).mapped()
+            )
+          );
+        return;
+      }
+
+      // File existence check
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const videoFile = files?.["video"]?.[0];
+      const thumbnailFile = files?.["thumbnail"]?.[0];
+
+      if (!videoFile) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoIsRequired"));
+        return;
+      }
+
+      if (!thumbnailFile) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "thumbnailIsRequired"));
+        return;
+      }
+
+      const { userId, categoryId, isAgeRestricted, isPrivate, title, description, keywords } = req.body;
+
+      // User existence check
+      const user = await prisma.user.findUnique({
+        select: { username: true },
+        where: { id: Number(userId) },
+      });
+
+      if (!user) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "userNotFound"));
+        return;
+      }
+
+      if (videoFile.size > 500 * 1024 * 1024) {
+        res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "videoTooLarge"));
+        return;
+      }
+
+      const duration = await new Promise<number>((resolve, reject) =>
+        ffmpeg.ffprobe(videoFile.path, (err, metadata) =>
+          err ? reject(err) : resolve(metadata.format.duration || 0)
+        )
+      );
+
+      const timestamp = Date.now();
+      const videoKey = `${user.username}/video/${timestamp}.mp4`;
+      const thumbnailKey = `${user.username}/thumbnail/${timestamp}.jpeg`;
+
+      const videoUrl = await generatePresignedUploadUrl(videoKey, "video/mp4");
+      const thumbnailUrl = await generatePresignedUploadUrl(thumbnailKey, "image/jpeg");
+
+      // Store files in the server
+      // await storeFilesInS3(res, user.username, paths, videoFile, thumbnailFile);
+
+      const video = await prisma.video.create({
+        data: {
+          userId: Number(userId),
+          categoryId: Number(categoryId),
+          isAgeRestricted,
+          isPrivate,
+          title,
+          description,
+          keywords,
+          size: videoFile.size,
+          duration: duration.toFixed(4), // Round to 3 decimal places
+          videoPath: videoKey,
+          thumbnailPath: thumbnailKey,
+          uuid: generateUUID(),
+        },
+      });
+
+      res.status(200).json(
+        apiResponse(ResponseCategory.SUCCESS, "presignedUrlsGenerated", {
+          videoId: video.id,
+          videoUrl,
+          thumbnailUrl,
+          videoKey,
+          thumbnailKey,
+        })
+      );
+    } catch (error) {
+      throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
+
+  static readonly confirmUpload: RequestHandler = async (req: Request, res: Response) => {
+    const videoID = Number(req.params.videoId);
+
+    if (!videoID) {
+      res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidVideoId"));
+    }
+
+    try {
+      await prisma.video.update({
+        where: { id: videoID },
+        data: { isUploaded: true },
+      });
       res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "videoUploaded"));
     } catch (error) {
       throw new Error(prismaErrorHandler(error as IPrismaError));
@@ -545,21 +734,96 @@ export class VideoController {
   };
 
   static readonly viewCount: RequestHandler = async (req: Request, res: Response) => {
-    const videoUUID = req.params.uuid;
-    logHttp("info", videoUUID);
-    if (!videoUUID) {
+    const videoID = Number(req.params.id);
+    if (!videoID) {
       res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidVideoId"));
     }
 
     try {
       // Increment the view count for the video
       await prisma.video.update({
-        where: { uuid: videoUUID },
+        where: { id: videoID },
         data: { viewCount: { increment: 1 } },
       });
       res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "viewCountUpdated"));
     } catch (error) {
       throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
+
+  static readonly getWatchHistory: RequestHandler = async (req: Request, res: Response) => {
+    const userID = req.params.id;
+
+    if (!userID) {
+      res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidUserId"));
+    }
+
+    try {
+      const result = await prisma.watchHistory.findMany({
+        where: { userId: Number(userID) },
+        orderBy: { createdAt: "desc" },
+        select: {
+          video: {
+            select: {
+              userId: true,
+              uuid: true,
+              title: true,
+              duration: true,
+              viewCount: true,
+              createdAt: true,
+              description: true,
+              videoPath: true,
+              thumbnailPath: true,
+              user: {
+                select: {
+                  username: true,
+                  displayName: true,
+                  channelName: true,
+                  image: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      const videos = await Promise.all(result.map(({ video }) => formatVideoData(video)));
+
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "dataFetched", videos));
+    } catch (error) {
+      throw new Error(prismaErrorHandler(error as IPrismaError));
+    }
+  };
+
+  static readonly watchHistory: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    const videoId = Number(req.body.videoId);
+    const userId = Number(req.body.userId);
+    const lastTimeStamp = Number(req.body.lastTimeStamp);
+    if (!videoId) {
+      res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidVideoId"));
+    }
+    if (!userId) {
+      res.status(StatusCodes.BAD_REQUEST).json(apiResponse(ResponseCategory.ERROR, "invalidUserId"));
+    }
+
+    try {
+      const existing = await prisma.watchHistory.findFirst({
+        where: { userId, videoId },
+      });
+
+      if (existing) {
+        await prisma.watchHistory.update({
+          where: { id: existing.id },
+          data: { lastTimeStamp },
+        });
+      } else {
+        await prisma.watchHistory.create({
+          data: { userId, videoId, lastTimeStamp },
+        });
+      }
+
+      res.status(StatusCodes.OK).json(apiResponse(ResponseCategory.SUCCESS, "viewCountUpdated"));
+    } catch (error) {
+      res.status(500).json(apiResponse(ResponseCategory.ERROR, prismaErrorHandler(error as IPrismaError)));
     }
   };
 }

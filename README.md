@@ -42,7 +42,9 @@
 │-- src
 │   │-- api
 │   │   │-- v1              # API version 1
-│   │   │   ├── controller  # Handles business logic
+│   │   │   ├── config      # Configuration files (e.g., aws)
+│   │   │   ├── controller  # Handles HTTP request and response logic
+│   │   │   ├── service     # Contains core business logic and data handling
 │   │   │   ├── middleware  # Express middlewares
 │   │   │   ├── validation  # Request validation schemas
 │   │   │   ├── routes      # Defines API routes
