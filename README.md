@@ -9,6 +9,7 @@ Welcome to the backend documentation of **PlayX**, a powerful video-sharing plat
 - [Getting Started](#getting-started)
 - [Documentation](docs/detail-documentaion.md#detailed-documentation)
   - [Project Structure](docs/project-structure.md#project-structure)
+  - [Api Endpoints](docs/api-endpoints.md#project-structure)
   - [Features](docs/features.md#user-panel-features)
   - [File Upload](docs/file-upload.md#file-upload)
   - [User Stories](https://simformsolutionspvtltd-my.sharepoint.com/:w:/r/personal/archan_vadgama_simformsolutions_com/_layouts/15/Doc.aspx?sourcedoc=%7BFA1D6C86-C15D-473F-86CB-CC55333739CA%7D&file=Archan%20Vadgama%20-%20Video%20Sharing%20Platform.docx&action=default&mobileredirect=true&DefaultItemOpen=1&ct=1750330605599&wdOrigin=OFFICECOM-WEB.START.EDGEWORTH&cid=732ef863-8229-47a8-be05-4c815f085dee&wdPreviousSessionSrc=HarmonyEmbed&wdPreviousSession=0ff8b3be-a721-46c7-bf90-f6c6feb624f4)
