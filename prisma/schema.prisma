@@ -48,6 +48,7 @@ model User {
   likes        Likes[] // Back relation to Likes
   comments     Comment[] // Back relation to Comment
   reports      Report[]       @relation("UserReport") // Back relation to Report
+  watchHistory WatchHistory[]
 }
 
 model RefreshToken {
@@ -104,6 +105,7 @@ model Video {
   categoryId    Int
   uuid          String    @unique // UUID for video
   isAgeRestricted Boolean   @default(false)
+  isUploaded    Boolean   @default(false) // It will true if video is uploaded to AWS
   isPrivate     Boolean   @default(true) // Only `user` can change this
   thumbnailPath String
   videoPath     String
@@ -123,6 +125,7 @@ model Video {
   likes    Likes[]   @relation("VideoLikes")
   comments Comment[] @relation("VideoComments")
   reports  Report[]  @relation("VideoReport") // Back relation to Report
+  watchHistory WatchHistory[]
 }
 
 model Category {
@@ -140,6 +143,22 @@ model Category {
 enum CurrentStatus {
   Active
   Inactive
+}
+
+
+model WatchHistory {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  videoId       Int
+  lastTimeStamp Int      // Last watched timestamp (in seconds)
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id])
+  video Video @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId]) // One user can only have one watch history per video
 }
 
 model Likes {

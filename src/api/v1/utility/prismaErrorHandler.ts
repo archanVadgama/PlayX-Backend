@@ -32,7 +32,7 @@ export const prismaErrorHandler = (error: IPrismaError): string => {
     default:
       break;
   }
-
+  console.log(error);
   // Handle other Prisma errors
   if (error instanceof Prisma.PrismaClientUnknownRequestError) {
     return "An unknown error occurred";
