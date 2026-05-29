@@ -1,0 +1,2 @@
+[2026-05-29T06:53:01Z] PRE_TOOL_USE  | session_id=demo-001 | tool=read_file | input="tool_input":{"path":"src/index.ts"}
+[2026-05-29T06:53:01Z] PRE_TOOL_USE  | session_id=demo-001 | tool=run_in_terminal | input="tool_input":{"command":"npm run build"}

@@ -1,0 +1,12 @@
+{
+  "hooks": [
+    {
+      "event": "sessionStart",
+      "run": ".github/hooks/scripts/log-session-start.sh"
+    },
+    {
+      "event": "preToolUse",
+      "run": ".github/hooks/scripts/log-tool-use.sh"
+    }
+  ]
+}

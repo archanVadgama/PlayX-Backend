@@ -1,0 +1,3 @@
+# Keep this directory in git so the hooks can write log files.
+# The actual *.log files are gitignored below to avoid committing runtime data.
+*.log
